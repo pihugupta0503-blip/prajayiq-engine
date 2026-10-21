@@ -80,13 +80,26 @@ presets = {
             "Format 3: Pattern Interrupt": "Cheryl, most restructuring roadmaps plan for operational milestones but overlook emotional friction within middle management. Deep in organizational facilitation. Tanvi",
             "Format 4: The YOU-Factor": "Cheryl, your recent perspective on building resilient culture during leadership transitions stood out. That mirrors my work with executive teams. Tanvi Mittal. Glad to connect."
         }
+    },
+    "✨ Custom Client (Add Any New Client or Market)": {
+        "client_name": "",
+        "profile": "",
+        "notes": "",
+        "icp": {
+            "primary_icp": "",
+            "disqualifications": "",
+            "sales_nav_boolean": "",
+            "value_pillar": ""
+        },
+        "sample_prospect": "",
+        "copy_samples": {}
     }
 }
 
 # Sidebar
 with st.sidebar:
     st.header("⚙️ PrajayIQ System Mode")
-    st.success("🟢 Production Engine Active (Zero API Latency)")
+    st.success("🟢 Production Engine Active")
     st.markdown("---")
     st.markdown("### Select Client Case Study:")
     preset_choice = st.selectbox(
@@ -94,6 +107,7 @@ with st.sidebar:
         list(presets.keys())
     )
 
+is_custom = (preset_choice == "✨ Custom Client (Add Any New Client or Market)")
 active_data = presets[preset_choice]
 
 # Step 1 & 2: Client Profile and Discovery
@@ -101,16 +115,59 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("1. Client Profile & Positioning")
-    c_name = st.text_input("Client Name", value=active_data["client_name"])
-    c_profile = st.text_area("Client LinkedIn Profile Summary / Experience", value=active_data["profile"], height=130)
+    c_name = st.text_input(
+        "Client Name / Brand", 
+        value=active_data["client_name"], 
+        placeholder="e.g. Sarah Jenkins (SaaS Enterprise Consultant)"
+    )
+    c_profile = st.text_area(
+        "Client LinkedIn Profile Summary / Industry Credibility", 
+        value=active_data["profile"], 
+        placeholder="Paste client LinkedIn background, years of experience, past pedigree, and domain expertise...",
+        height=140
+    )
 
 with col2:
     st.subheader("2. Strategic Onboarding & Discovery Notes")
-    c_notes = st.text_area("Founder / Strategy Meeting Intake Notes", value=active_data["notes"], height=130)
+    c_notes = st.text_area(
+        "Founder / Strategy Meeting Intake Notes", 
+        value=active_data["notes"], 
+        placeholder="What companies or decision-makers should we target? What tone is required? What is the client's offer?",
+        height=140
+    )
 
 # Trigger ICP Generation
 if st.button("Generate Ideal Customer Profile (ICP) & Sales Navigator Strings", type="primary"):
-    st.session_state['icp_result'] = active_data["icp"]
+    if is_custom:
+        # Dynamic Heuristic Engine for Custom Clients
+        target_role = "Founders, CXOs, Managing Directors, and Practice Heads"
+        if any(term in (c_profile + c_notes).lower() for term in ["saas", "tech", "software"]):
+            industry_kw = '"B2B SaaS" OR "Enterprise Software" OR "Cloud Infrastructure"'
+            titles_kw = '"Chief Executive Officer" OR "Chief Technology Officer" OR "VP Engineering"'
+            val = "Optimizing recurring revenue growth, churn reduction, and enterprise sales efficiency."
+        elif any(term in (c_profile + c_notes).lower() for term in ["finance", "capital", "wealth", "fund"]):
+            industry_kw = '"Private Equity" OR "Venture Capital" OR "Family Office" OR "Wealth Management"'
+            titles_kw = '"Managing Director" OR "Partner" OR "Chief Investment Officer" OR "Principal"'
+            val = "Capital structure advisory, liquidity planning, and transaction execution."
+        elif any(term in (c_profile + c_notes).lower() for term in ["health", "medical", "pharma", "biotech"]):
+            industry_kw = '"Healthcare" OR "Medical Devices" OR "Digital Health" OR "Pharmaceuticals"'
+            titles_kw = '"Chief Medical Officer" OR "VP Clinical Operations" OR "Head of Regulatory"'
+            val = "Operational compliance, clinical scalability, and healthcare leadership."
+        else:
+            first_word = c_name.split()[0] if c_name else "Client"
+            industry_kw = '"Professional Services" OR "Management Consulting" OR "Corporate Advisory"'
+            titles_kw = '"Chief Executive Officer" OR "Founder" OR "Managing Partner" OR "Vice President"'
+            val = f"Scaling executive partnerships and operational leadership through {first_word}'s domain practice."
+
+        st.session_state['icp_result'] = {
+            "primary_icp": f"Senior {titles_kw.replace(' OR ', ', ').replace('\"', '')} across target enterprises with 11-500 employees.",
+            "disqualifications": "Junior staff, operational assistants, individual contributors without budget authority, generic vendors.",
+            "sales_nav_boolean": f'({industry_kw}) AND ({titles_kw}) AND Headcount: 11-500',
+            "value_pillar": val
+        }
+    else:
+        st.session_state['icp_result'] = active_data["icp"]
+    
     st.session_state['active_client'] = preset_choice
 
 # Display ICP Results
@@ -136,8 +193,9 @@ p_col1, p_col2 = st.columns([1, 1])
 
 with p_col1:
     prospect_input = st.text_area(
-        "Target Prospect Context / Career Path:",
+        "Target Prospect Context / LinkedIn Bio / Career Path:",
         value=active_data["sample_prospect"],
+        placeholder="e.g. David Vance, CEO at BlueRidge Logistics. 20 years leading freight supply chains across North America.",
         height=120
     )
     format_choice = st.selectbox(
@@ -161,7 +219,26 @@ with p_col2:
 
 # Generate Message
 if st.button("Synthesize Personalized Outreach Note", type="secondary"):
-    st.session_state['generated_note'] = active_data["copy_samples"][format_choice]
+    if is_custom:
+        # Dynamic Custom Copy Synthesis
+        prospect_name = prospect_input.split(",")[0].split()[0] if prospect_input else "there"
+        client_first = c_name.split()[0] if c_name else "Advisor"
+        
+        # Extract company or role snippet
+        prospect_role = "operations"
+        if "ceo" in prospect_input.lower(): prospect_role = "executive leadership"
+        elif "hr" in prospect_input.lower() or "people" in prospect_input.lower(): prospect_role = "people strategy"
+        elif "finance" in prospect_input.lower() or "cfo" in prospect_input.lower(): prospect_role = "capital allocation"
+
+        custom_generated = {
+            "Format 1: Career Arc Anchor": f"{prospect_name}, your trajectory leading {prospect_role} through market shifts is rare. Scaling past early milestones demands new operational rigor. Worth comparing notes. {client_first}",
+            "Format 2: Peer-to-Peer Identity": f"{prospect_name}, fellow practitioner here. Navigating unit level economics and strategic friction is where most leaders lose time. Would value exchanging perspectives. {client_first}",
+            "Format 3: Pattern Interrupt": f"{prospect_name}, there is a turning point where standard growth playbooks stop compounding and organizational drag sets in. Deep in strategic advisory. Best, {client_first}",
+            "Format 4: The YOU-Factor": f"{prospect_name}, your recent focus on institutional execution stood out. That mirrors my current advisory work with high growth leadership teams. Glad to connect. {client_first}"
+        }
+        st.session_state['generated_note'] = custom_generated[format_choice]
+    else:
+        st.session_state['generated_note'] = active_data["copy_samples"][format_choice]
 
 # Pre-Flight Linting Engine & Simulation
 if 'generated_note' in st.session_state:
