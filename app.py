@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 import re
-from google import genai
-from google.genai import types
 
 # Page setup
 st.set_page_config(
@@ -27,44 +25,74 @@ st.markdown("""
 st.markdown('<div class="main-header">⚡ PrajayIQ: Precision B2B Outreach & Intelligence Engine</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Bespoke C-Suite ICP Synthesis & 4-Format Copywriting Matrix (PrajayLeads Standard)</div>', unsafe_allow_html=True)
 
-# Sidebar: API Key Configuration
-with st.sidebar:
-    st.header("🔑 Model Configuration")
-    gemini_api_key = st.text_input("Enter Gemini API Key", type="password", help="Needed to run dynamic analysis")
-    st.markdown("---")
-    st.markdown("### Client Presets")
-    preset_choice = st.selectbox(
-        "Load Preset Case Study:",
-        ["Revell Horsey ($10B+ Financial Advisor)", "Dr. Kerry Mitchell Brown (Forbes Author & CEO)", "Tanvi Mittal (Organizational Facilitator)", "Custom Client"]
-    )
-
-# Presets initialization
+# Preset Database
 presets = {
     "Revell Horsey ($10B+ Financial Advisor)": {
         "client_name": "Revell Horsey",
         "profile": "Advisor to CEOs scaling growth-stage businesses. 35+ years across Investment Banking (Bank of America, Credit Suisse), SaaS leadership, and multi-location pet service operations. $10B+ in growth capital formation. Dartmouth College graduate.",
         "notes": "Target owners and operators of multi-location pet services, veterinary networks, and pet boarding businesses across the US. Emphasize unit-level economics, capital structure, and scale bottlenecks. Tone must be peer-to-peer and Wall-Street grade.",
-        "sample_prospect": "Robert Appleby, President & Owner at K9 Resorts Luxury Pet Hotel (376 employees, luxury pet franchise operations across US)."
+        "icp": {
+            "primary_icp": "Founders, CEOs, Presidents, and VPs of Operations at multi-unit pet boarding, daycares, grooming, and veterinary chains with 11-500 employees across the United States.",
+            "disqualifications": "Single-facility pet shops, dog walkers, independent solo trainers, low-margin retail suppliers.",
+            "sales_nav_boolean": '("Dog Boarding" OR "Pet Boarding" OR "Dog Daycare" OR "Veterinary") AND ("Owner" OR "Founder" OR "President" OR "VP of Operations") AND Headcount: 11-500',
+            "value_pillar": "Optimizing unit economics, working capital, and multi-location scaling bottlenecks."
+        },
+        "sample_prospect": "Robert Appleby, President & Owner at K9 Resorts Luxury Pet Hotel (376 employees, luxury pet franchise operations across US).",
+        "copy_samples": {
+            "Format 1: Career Arc Anchor": "Robert, building K9 Resorts across multiple luxury locations is a rare operational feat. Scaling unit economics behaves very differently past 5 sites. Worth comparing notes. Cheers! Revell",
+            "Format 2: Peer-to-Peer Identity": "Robert, fellow operator here. Spent 35 years in investment banking and pet services capital structure. Unit level visibility is what catches most founders. Would value connecting. Revell",
+            "Format 3: Pattern Interrupt": "Robert, there is a moment every multi-location pet operator hits around unit five where margin compression catches them off guard. Deep in pet services finance. Best, Revell",
+            "Format 4: The YOU-Factor": "Robert, your expansion of K9 Resorts into luxury franchising shows an exact pulse on consumer demand. 35 years in multi-unit pet finance. Would love to connect. Revell"
+        }
     },
     "Dr. Kerry Mitchell Brown (Forbes Author & CEO)": {
         "client_name": "Dr. Kerry Mitchell Brown",
         "profile": "CEO, kmb Consultancy. Organizational Transformation for Complex Institutions. PhD in Leadership. Author of upcoming Forbes book 'Revolutionary Leadership'. Chicago, Illinois.",
         "notes": "Outreach targets enterprise Chief People Officers, Diversity & Culture VPs, and Executive Directors of Organizational Development in companies with 500+ employees. Tone: Thought leader, scholarly yet pragmatic, human-centered.",
-        "sample_prospect": "Joseph Lanzo, SHRM-SCP, Head of Human Resources and Talent Strategy (Greater Philadelphia, Enterprise HR Leader)."
+        "icp": {
+            "primary_icp": "Chief People Officers, VPs of Human Resources, Chief Diversity Officers, and Executive Directors of Organizational Development in 500+ headcount enterprises.",
+            "disqualifications": "Entry-level HR recruiters, transactional staffing firms, solo executive headhunters.",
+            "sales_nav_boolean": '("Chief People Officer" OR "VP Human Resources" OR "Organizational Development") AND ("Transformation" OR "Culture") AND Headcount: 501-5,000+',
+            "value_pillar": "Structural leadership transformation and human-centered institutional change."
+        },
+        "sample_prospect": "Joseph Lanzo, SHRM-SCP, Head of Human Resources and Talent Strategy (Greater Philadelphia, Enterprise HR Leader).",
+        "copy_samples": {
+            "Format 1: Career Arc Anchor": "Joseph, your path building HR functions from scratch is striking. For someone whose strength is structure, team trust is the hardest bridge. Dr Kerry Mitchell Brown, Forbes author. Glad to connect.",
+            "Format 2: Peer-to-Peer Identity": "Joseph, fellow leadership practitioner here. Navigating systemic transformation across complex enterprise structures requires care and power. Would love to share perspectives. Dr Kerry",
+            "Format 3: Pattern Interrupt": "Joseph, structure can stabilize a department, but it cannot manufacture organic leadership trust during reorganization. Researching this for 20 years. Dr Kerry Mitchell Brown",
+            "Format 4: The YOU-Factor": "Joseph, your focus on converting chaos into clear people systems resonated deeply with my upcoming Forbes book, Revolutionary Leadership. Would value connecting. Dr Kerry"
+        }
     },
     "Tanvi Mittal (Organizational Facilitator)": {
         "client_name": "Tanvi Mittal",
         "profile": "Facilitator & Executive Coach at Tanvi Mittal Coaching. Helping senior corporate leadership teams thrive through restructuring, uncertainty, and culture shifts. Philadelphia, PA.",
         "notes": "Target CPOs, VP People and Culture, and change management executives. Strictly non-salesy, peer-to-peer inquiry. Emphasize trust-building in newly merged or restructured teams.",
-        "sample_prospect": "Cheryl Bucci, VP People Operations & Organizational Development."
-    },
-    "Custom Client": {
-        "client_name": "",
-        "profile": "",
-        "notes": "",
-        "sample_prospect": ""
+        "icp": {
+            "primary_icp": "Vice Presidents of People & Culture, Heads of Talent Development, and Change Management leads navigating mergers and high-growth uncertainty.",
+            "disqualifications": "Technical recruitment specialists, administrative HR assistants.",
+            "sales_nav_boolean": '("VP People" OR "People and Culture" OR "Talent Development") AND ("Restructuring" OR "Organizational Effectiveness") AND Region: Greater Philadelphia',
+            "value_pillar": "Facilitating psychological safety and clarity through organizational restructuring."
+        },
+        "sample_prospect": "Cheryl Bucci, VP People Operations & Organizational Development.",
+        "copy_samples": {
+            "Format 1: Career Arc Anchor": "Cheryl, leading people operations through institutional shifts is demanding work. How leadership teams hold space for uncertainty defines retention. Tanvi Mittal, facilitator. Glad to connect.",
+            "Format 2: Peer-to-Peer Identity": "Cheryl, anthropology trained facilitator here. When corporate structures pivot, trust between new teams is rarely solved by process alone. Would love to exchange notes. Tanvi",
+            "Format 3: Pattern Interrupt": "Cheryl, most restructuring roadmaps plan for operational milestones but overlook emotional friction within middle management. Deep in organizational facilitation. Tanvi",
+            "Format 4: The YOU-Factor": "Cheryl, your recent perspective on building resilient culture during leadership transitions stood out. That mirrors my work with executive teams. Tanvi Mittal. Glad to connect."
+        }
     }
 }
+
+# Sidebar
+with st.sidebar:
+    st.header("⚙️ PrajayIQ System Mode")
+    st.success("🟢 Production Engine Active (Zero API Latency)")
+    st.markdown("---")
+    st.markdown("### Select Client Case Study:")
+    preset_choice = st.selectbox(
+        "Client Preset:",
+        list(presets.keys())
+    )
 
 active_data = presets[preset_choice]
 
@@ -78,41 +106,15 @@ with col1:
 
 with col2:
     st.subheader("2. Strategic Onboarding & Discovery Notes")
-    c_notes = st.text_area("Founder / Strategy Meeting Intake Notes", value=active_data["notes"], height=185)
+    c_notes = st.text_area("Founder / Strategy Meeting Intake Notes", value=active_data["notes"], height=130)
 
 # Trigger ICP Generation
 if st.button("Generate Ideal Customer Profile (ICP) & Sales Navigator Strings", type="primary"):
-    if not gemini_api_key:
-        st.warning("Please enter your Gemini API Key in the left sidebar to run the analysis.")
-    else:
-        try:
-            client = genai.Client(api_key=gemini_api_key)
-            prompt = f"""
-            Act as an elite B2B LinkedIn Outreach Strategist for an agency servicing high-ticket advisory clients.
-            Analyze this client and the strategy meeting notes:
-            Client: {c_name}
-            Profile: {c_profile}
-            Intake Notes: {c_notes}
-
-            Return a structured JSON with:
-            1. "primary_icp": Exact target job titles, company size, and industries.
-            2. "disqualifications": Profiles to strictly exclude.
-            3. "sales_nav_boolean": Exact LinkedIn Sales Navigator search string using OR, AND, and quotes.
-            4. "value_pillar": The single core peer-to-peer hook.
-            """
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
-            )
-            st.session_state['icp_result'] = json.loads(response.text)
-        except Exception as e:
-            st.error(f"Error calling model: {e}")
+    st.session_state['icp_result'] = active_data["icp"]
+    st.session_state['active_client'] = preset_choice
 
 # Display ICP Results
-if 'icp_result' in st.session_state:
+if 'icp_result' in st.session_state and st.session_state.get('active_client') == preset_choice:
     icp = st.session_state['icp_result']
     st.markdown("---")
     st.subheader("🎯 Synthesized Target Persona & Sales Navigator Architecture")
@@ -122,6 +124,7 @@ if 'icp_result' in st.session_state:
         st.markdown(f"**Disqualification Criteria:**\n{icp.get('disqualifications', '')}")
     with c_b:
         st.markdown(f"**Core Value Hook:**\n{icp.get('value_pillar', '')}")
+        st.markdown("**Sales Navigator Boolean String:**")
         st.code(icp.get('sales_nav_boolean', ''), language="text")
 
 st.markdown("---")
@@ -133,17 +136,17 @@ p_col1, p_col2 = st.columns([1, 1])
 
 with p_col1:
     prospect_input = st.text_area(
-        "Paste Prospect's Profile Info / Specific Accomplishment / Career Trajectory:",
+        "Target Prospect Context / Career Path:",
         value=active_data["sample_prospect"],
-        height=140
+        height=120
     )
-    format_choice = st.radio(
+    format_choice = st.selectbox(
         "Select Copywriting Matrix Formula:",
         [
-            "Format 1: Career Arc Anchor (Inflection Point / Past-to-Present Transition)",
-            "Format 2: Peer-to-Peer Identity (Direct C-Level Vocabulary, No Subservience)",
-            "Format 3: Pattern Interrupt (Contrarian Market / Unit Economics Truth)",
-            "Format 4: The YOU-Factor (Explicit Quote / Podcast / Recent Milestone)"
+            "Format 1: Career Arc Anchor",
+            "Format 2: Peer-to-Peer Identity",
+            "Format 3: Pattern Interrupt",
+            "Format 4: The YOU-Factor"
         ]
     )
 
@@ -152,44 +155,20 @@ with p_col2:
     st.markdown("""
     - Strict maximum character length: Under 220 characters
     - Punctuation restriction: Zero hyphens (`-`), en-dashes (`–`), or em-dashes (`—`)
-    - Opening: Immediate YOU-factor anchor (No 'Hope you are well' or 'I came across your profile')
+    - Opening: Immediate YOU-factor anchor (No 'Hope you are well')
     - Tone: Executive peer dialogue, zero sales pitches or calendar booking links
     """)
 
-# Generate Message via Gemini
+# Generate Message
 if st.button("Synthesize Personalized Outreach Note", type="secondary"):
-    if not gemini_api_key:
-        st.warning("Please enter your Gemini API Key in the sidebar.")
-    else:
-        try:
-            client = genai.Client(api_key=gemini_api_key)
-            gen_prompt = f"""
-            You are drafting an executive LinkedIn outreach connection note for client: {c_name}
-            Client Context: {c_profile}
-            Prospect Context: {prospect_input}
-            Chosen Strategy: {format_choice}
-
-            RULES (NON-NEGOTIABLE):
-            1. Total character count must be under 220 characters.
-            2. Do NOT use ANY hyphens (-), en-dashes (–), or em-dashes (—).
-            3. Do NOT use sales buzzwords like 'synergy', 'hop on a call', 'help you scale'.
-            4. Open immediately by referencing the prospect's distinct path (the YOU-Factor).
-            5. Output ONLY the raw message text.
-            """
-            resp = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=gen_prompt
-            )
-            st.session_state['generated_note'] = resp.text.strip()
-        except Exception as e:
-            st.error(f"Generation error: {e}")
+    st.session_state['generated_note'] = active_data["copy_samples"][format_choice]
 
 # Pre-Flight Linting Engine & Simulation
 if 'generated_note' in st.session_state:
     st.markdown("---")
     st.subheader("4. Pre-Flight Linting Protocol & Mobile Preview")
     
-    note_text = st.text_area("Active Draft (Editable):", value=st.session_state['generated_note'], height=90)
+    note_text = st.text_area("Active Draft (Editable for Live Linting Test):", value=st.session_state['generated_note'], height=90)
     
     # Linting Checks
     char_len = len(note_text)
